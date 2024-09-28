@@ -1,0 +1,46 @@
+# Node.js dependencies
+node_modules/
+package-lock.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS-specific files
+.DS_Store
+
+# Testing output
+coverage/
+*.lcov
+
+# Build files
+dist/
+build/
+
+# Temporary files
+*.tmp
+*.swp
+
+# IDE files
+.vscode/
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+
+# Babel and ESLint cache
+.babelrc
+.eslintcache
+
+# Other configurations
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Jest
+coverage/
