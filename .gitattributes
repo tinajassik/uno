@@ -1,0 +1,8 @@
+# Handle line endings
+* text=auto
+
+# Ensure shell scripts use LF endings on all systems
+*.sh text eol=lf
+
+# Ensure batch scripts use CRLF endings on all systems
+*.bat text eol=crlf
