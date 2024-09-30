@@ -16,6 +16,7 @@
   "dependencies": {
     "@babel/core": "^7.24.6",
     "@babel/preset-typescript": "^7.24.6",
+    "babel": "^5.8.38",
     "babel-jest": "^29.7.0",
     "jest": "^29.7.0",
     "ts-loader": "^9.5.1",

@@ -2,6 +2,7 @@ import { CardPredicate } from "../../__test__/utils/predicates";
 import { Shuffler } from "../utils/random_utils";
 
 export interface Deck {
+  top(): Card;
   deal(): any;
   size: number;
   cards: Card[],
@@ -24,12 +25,13 @@ export type Type = 'NUMBERED' | 'SKIP' | 'REVERSE' | 'DRAW' | 'WILD' | 'WILD DRA
 
 export const COLORS: Color[] = ['RED', 'GREEN', 'BLUE', 'YELLOW']; 
 
-class UnoDeck implements Deck {
+export class UnoDeck implements Deck {
      cards: Card[] = [];
      
     constructor(cards?: Card[]) {
       this.cards = cards || this.createDeck();
     }
+  
   
     createDeck(): Card[] {
       const deck: Card[] = [];
@@ -74,6 +76,10 @@ class UnoDeck implements Deck {
   
     get size(): number {
       return this.cards.length;
+    }
+
+    top(): Card {
+      return this.cards.at(0)!;
     }
   
     filter(predicate: (card: Card) => boolean): Deck {

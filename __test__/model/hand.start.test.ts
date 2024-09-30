@@ -52,11 +52,12 @@ describe("Hand set up", () => {
   it("deals 7 cards to each player from the top of the deck", () => {
     [hand, cards] = createHandWithShuffledCards({dealer: 3, shuffler: normalShuffle})
     for(let playerIndex = 0; playerIndex < hand.playerCount; playerIndex++) {
-      hand.playerHand(playerIndex).forEach((card, index) => expect(card).toEqual(cards[7 * playerIndex + index]))
+      hand.playerHand(playerIndex).forEach((card: any, index: number) => expect(card).toEqual(cards[7 * playerIndex + index]))
     }
   })
   it("returns consistent hands", () => {
     expect(hand.playerHand(0)).toBe(hand.playerHand(0))
+    expect(hand.playerHand(3)).toBe(hand.playerHand(3))
   })
   it("creates a discard pile with the top card", () => {
     const undealtCards = cards.slice(dealtCardsCount)  
