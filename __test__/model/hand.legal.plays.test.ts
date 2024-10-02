@@ -165,7 +165,7 @@ describe("Legal plays", () => {
       const hand: Hand = createHand({players: ['a', 'b', 'c', 'd'], dealer: 3, shuffler})
       expect(hand.canPlay(0)).toBeTruthy()
     })
-    it("is not legal to play a non-skip card with different color than the top card", () => {
+    it("is not legal to play a non-draw card with different color than the top card", () => {
       const shuffler = builder.hand(1).is({type: 'NUMBERED', color: 'RED'}).build()
       const hand: Hand = createHand({players: ['a', 'b', 'c', 'd'], dealer: 3, shuffler})
       expect(hand.canPlay(0)).toBeFalsy()
