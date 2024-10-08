@@ -17,12 +17,9 @@ export default {
         const numBots = ref(1); // Default value is 1 bot
         const router = useRouter(); // Use the router to navigate to the next screen
 
-        // Function to handle starting the game
-        const startGame = () => {
+        const startGame = () => { // logic to initiate the game, but for now it navigates to the GameOverScreen.
             console.log(`Starting game with ${numBots.value} bots`);
-            // Here you can add logic to store the number of bots and set up the game
-            // For now, let's navigate to the PlayOneHand view as a placeholder
-            router.push({ name: 'PlayOneHand' });
+            router.push({ name: 'GameOver' });
         };
 
         return { numBots, startGame };
