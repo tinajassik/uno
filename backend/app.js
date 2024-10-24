@@ -3,9 +3,11 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var cors = require('cors'); // Import the CORS package
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+// var indexRouter = require('./routes/index');
+// var usersRouter = require('./routes/users');
+var playerRouter = require('./routes/playerController');
 
 var app = express();
 
@@ -19,8 +21,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use(cors()); // This will allow requests from any origin
+
+// app.use('/', indexRouter);
+// app.use('/users', usersRouter);
+app.use('/player', playerRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
