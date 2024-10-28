@@ -25,7 +25,7 @@ app.use(cors()); // This will allow requests from any origin
 
 // app.use('/', indexRouter);
 // app.use('/users', usersRouter);
-app.use('/player', playerRouter);
+app.use('/user', playerRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

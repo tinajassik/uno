@@ -23,13 +23,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getLastPlayerId = getLastPlayerId;
-exports.validatePlayer = validatePlayer;
-exports.appendPlayer = appendPlayer;
+exports.getLastUserId = getLastUserId;
+exports.validateUsername = validateUsername;
+exports.registerUser = registerUser;
+exports.verifyUserLogin = verifyUserLogin;
 const fs = __importStar(require("fs"));
+// import { PlayerDto } from '../dto/playerDto';
 const filePath = './playerData.ndjson';
 // Function to get the highest player ID from the existing file
-function getLastPlayerId() {
+function getLastUserId() {
     if (!fs.existsSync(filePath)) {
         return 0; // No file exists yet, so return 0
     }
@@ -37,35 +39,45 @@ function getLastPlayerId() {
     if (!data) {
         return 0; // File is empty
     }
-    const players = data.split('\n').map(line => JSON.parse(line));
-    const lastPlayer = players[players.length - 1];
-    return lastPlayer.id; // Return the highest current player ID
+    const users = data.split('\n').map(line => JSON.parse(line));
+    const lastUser = users[users.length - 1];
+    return lastUser.id; // Return the highest current player ID
 }
-// Validate if a player with the given username exists
-function validatePlayer(username) {
+// Validate if a user with the given username exists
+function validateUsername(username) {
     if (!fs.existsSync(filePath)) {
         return false; // No file exists, no players to validate
     }
     const data = fs.readFileSync(filePath, 'utf8').trim();
     if (!data) {
-        return false; // File is empty, no players to validate
+        return false;
     }
-    const players = data.split('\n').map(line => JSON.parse(line));
-    // Check if the username already exists
-    return players.some(player => player.name === username);
+    const users = data.split('\n').map(line => JSON.parse(line));
+    return users.some(user => user.name === username);
 }
-// Append a new player to the file with auto-incrementing ID
-function appendPlayer(username, password) {
-    // Check if the player already exists
-    if (validatePlayer(username)) {
+// Append a new user to the file with auto-incrementing ID
+function registerUser(username, password) {
+    if (validateUsername(username)) {
         throw new Error(`Player with username "${username}" already exists.`);
     }
-    const lastId = getLastPlayerId();
-    const newPlayer = {
-        id: lastId + 1, // Increment the ID for the new player
+    const lastId = getLastUserId();
+    const newUser = {
+        id: lastId + 1,
         name: username,
         password: password
     };
-    // Append the new player to the NDJSON file
-    fs.appendFileSync(filePath, JSON.stringify(newPlayer) + '\n');
+    fs.appendFileSync(filePath, JSON.stringify(newUser) + '\n');
+}
+// Validate user login
+function verifyUserLogin(username, password) {
+    if (!fs.existsSync(filePath)) {
+        return null;
+    }
+    const data = fs.readFileSync(filePath, 'utf8').trim();
+    if (!data) {
+        return null;
+    }
+    const users = data.split('\n').map(line => JSON.parse(line));
+    const user = users.find(user => user.name === username && user.password === password);
+    return user ? { id: user.id, name: user.name } : null;
 }
