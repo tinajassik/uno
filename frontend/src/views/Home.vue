@@ -13,104 +13,91 @@
 
       <div v-if="currentView === 'signup'" class="form-container">
         <h2>Sign Up</h2>
-        <form @submit.prevent="handleSignup">
-          <div class="form-group">
-            <label for="username">Username</label>
-            <input type="text" id="username" v-model="signupForm.username" required />
-          </div>
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" v-model="signupForm.email" required />
-          </div>
-          <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" v-model="signupForm.password" required />
-          </div>
-          <div class="buttons">
-            <button type="submit" class="signup-button">Create Account</button>
-            <button type="button" class="back-button" @click="setCurrentView('home')">Back</button>
-          </div>
-        </form>
+        <input v-model="signupData.username" type="text" placeholder="Username" />
+        <input v-model="signupData.password" type="password" placeholder="Password" />
+        <button @click="handleSignup">Sign Up</button>
+        <button class="back-button" @click="setCurrentView('home')">Back</button>
       </div>
 
       <div v-if="currentView === 'login'" class="form-container">
         <h2>Log In</h2>
-        <form @submit.prevent="handleLogin">
-          <div class="form-group">
-            <label for="login-username">Username</label>
-            <input type="text" id="login-username" v-model="loginForm.username" required />
-          </div>
-          <div class="form-group">
-            <label for="login-password">Password</label>
-            <input type="password" id="login-password" v-model="loginForm.password" required />
-          </div>
-          <div class="buttons">
-            <button type="submit" class="login-button">Log In</button>
-            <button type="button" class="back-button" @click="setCurrentView('home')">Back</button>
-          </div>
-        </form>
+        <input v-model="loginData.username" type="text" placeholder="Username" />
+        <input v-model="loginData.password" type="password" placeholder="Password" />
+        <button @click="handleLogin">Log In</button>
+        <button class="back-button" @click="setCurrentView('home')">Back</button>
+      </div>
+
+      <div v-if="showModal" class="modal-overlay">
+        <div class="modal">
+          <h3>{{ authStore.successMessage || authStore.errorMessage }}</h3>
+          <button @click="handleModalClose">OK</button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/store/authStore';
 
 export default {
   name: 'HomePage',
   setup() {
     const router = useRouter();
-    const currentView = ref('home'); // Can be home, signup, or login
-    
-    console.log(currentView.value);
+    const authStore = useAuthStore();
 
-    const signupForm = ref({
-      username: '',
-      email: '',
-      password: ''
-    });
+    const currentView = ref('home');
+    const signupData = ref({ username: '', password: '' });
+    const loginData = ref({ username: '', password: '' });
+    const showModal = computed(() => !!authStore.successMessage || !!authStore.errorMessage);
 
-    const loginForm = ref({
-      username: '',
-      password: ''
-    });
+    const handleSignup = async () => {
+      await authStore.signup(signupData.value);
+      if (authStore.successMessage) {
+        setTimeout(() => {
+          currentView.value = 'login';
+          router.push({ name: 'Login' });
+        }, 500);
+        
+      }
+      };
+
+    const handleLogin = async () => {
+      await authStore.login(loginData.value);
+      if (authStore.token) {
+        router.replace({ name: 'GameSetup' });
+      }
+    };
+
+    const handleModalClose = () => {
+      authStore.clearMessages();
+      if (authStore.successMessage && currentView.value === 'signup') {
+        setCurrentView('login');
+      }
+    };
 
     const setCurrentView = (view: string) => {
       currentView.value = view;
-    };
-
-    const handleSignup = () => {
-      console.log('Sign up form data:', signupForm.value);
-      // Reset form fields
-      signupForm.value = {
-        username: '',
-        email: '',
-        password: ''
-      };
-      // Go back to home after successful signup
-      setCurrentView('home');
-    };
-
-    const handleLogin = () => {
-      console.log('Log in form data:', loginForm.value);
-      // Reset form fields
-      loginForm.value = {
-        username: '',
-        password: ''
-      };
-      // Setup game after sucessful login
-      router.push({ name: 'GameSetup' });
+      if (view === 'signup') {
+        signupData.value = { username: '', password: '' };
+      } else if (view === 'login') {
+        loginData.value = { username: '', password: '' };
+      }
+      authStore.clearMessages();
     };
 
     return {
       currentView,
-      signupForm,
-      loginForm,
-      setCurrentView,
+      signupData,
+      loginData,
       handleSignup,
-      handleLogin
+      handleLogin,
+      handleModalClose,
+      setCurrentView,
+      authStore,
+      showModal,
     };
   },
 };
@@ -120,7 +107,7 @@ export default {
 .home {
   height: 100vh;
   width: 100vw;
-  background-image: url('@/assets/images/unoBackgroundImage.png');
+  background-image: url('@/assets/images/background/unoBackgroundImage.png');
   background-size: cover;
   background-position: center;
   display: flex;
@@ -200,6 +187,8 @@ button {
 .back-button {
   background-color: #808080;
   color: #ffffff;
+  margin-top: 10px;
+  margin-left: 15px;
 }
 
 .back-button:hover {
@@ -208,27 +197,42 @@ button {
 }
 
 .form-container {
-  margin-top: 0px;
+  margin-top: 15px;
   text-align: left;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #ffd700;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
 }
 
 input {
   width: 100%;
-  padding: 10px;
+  padding: 8px;
+  margin: 8px 0;
   border-radius: 8px;
   border: none;
   font-size: 1em;
   box-sizing: border-box;
 }
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  color: black;
+  }
 </style>
