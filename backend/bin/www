@@ -7,6 +7,8 @@
 var app = require('../app');
 var debug = require('debug')('backend:server');
 var http = require('http');
+const { Server } = require('socket.io');
+const SocketHandler = require('../socketHandler'); // Import SocketHandler
 
 /**
  * Get port from environment and store in Express.
@@ -15,11 +17,17 @@ var http = require('http');
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
+
 /**
  * Create HTTP server.
  */
 
-var server = http.createServer(app);
+const server = http.createServer(app);   // Create HTTP server with Express app
+const io = new Server(server, {
+  cors: { origin: '*' },                 // Allow cross-origin requests
+});
+
+new SocketHandler(io);
 
 /**
  * Listen on provided port, on all network interfaces.

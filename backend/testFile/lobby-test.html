@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lobby Test</title>
+  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Lobby Test</h1>
+
+  <!-- Login Section -->
+  <div>
+    <h2>Login</h2>
+    <h3>Try abc def OR test test</h3>
+    <label for="username">Username:</label>
+    <input type="text" id="username">
+    <label for="password">Password:</label>
+    <input type="password" id="password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Lobby Section (Visible after login) -->
+  <div id="lobby-section" style="display: none;">
+    <h2>Lobby Actions</h2>
+    <button onclick="createLobby()">Create Lobby</button>
+    <button onclick="getLobbies()">Get Lobby List</button>
+  </div>
+
+  <!-- Output Section -->
+  <div id="output"></div>
+
+  <script>
+    let socket; // Store the socket instance
+    let token;  // Store the JWT token
+
+    async function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const output = document.getElementById('output');
+
+      try {
+        const response = await fetch(`http://localhost:3000/user/login/${username}/${password}`, {
+          method: 'POST',
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          token = data.token;
+          output.innerHTML = `<p>Login successful, token: ${token}</p>`;
+          console.log('Login successful, token:', token);
+
+          // Connect via Socket.io and authenticate with token
+          socket = io("http://localhost:3000");
+          socket.emit('login', { token });
+
+          socket.on('loginSuccess', (data) => {
+            output.innerHTML += `<p>${data.message}</p>`;
+            output.innerHTML += `<p>Player info: ${JSON.stringify(data.player)}</p>`;
+            document.getElementById('lobby-section').style.display = 'block'; // Show lobby actions
+            console.log(data.message);
+          });
+
+          socket.on('loginError', (error) => {
+            output.innerHTML += `<p>Error: ${error.message}</p>`;
+            console.error(error.message);
+          });
+
+        } else {
+          output.innerHTML = `<p>${data.message}</p>`;
+          console.error(data.message);
+        }
+      } catch (error) {
+        output.innerHTML = `<p>Error: ${error.message}</p>`;
+        console.error('Error:', error);
+      }
+    }
+
+    //!!!!
+    //Saran - example implementation on the frontend
+    function createLobby() {
+      if (!socket) {
+        console.error("Not connected to Socket.io.");
+        return;
+      }
+      socket.emit('createLobby', {});
+      socket.on('lobbyCreated', (data) => {
+        //Our frontend logic to switch to lobby view starts here
+        const output = document.getElementById('output');
+        output.innerHTML = `<p>Lobby created with ID: ${data.lobbyId}, Host ID: ${data.hostId}</p>`;
+        console.log("Lobby created:", data);
+        //Ends here
+      });
+    }
+
+    function getLobbies() {
+      if (!socket) {
+        console.error("Not connected to Socket.io.");
+        return;
+      }
+      socket.emit('getLobbies');
+      socket.on('lobbiesList', (lobbies) => {
+        //Our frontend logic to get a list of lobbies
+        const output = document.getElementById('output');
+        output.innerHTML = `<h3>Available Lobbies:</h3>`;
+        if (lobbies.length === 0) {
+          output.innerHTML += `<p>No lobbies available.</p>`;
+        } else {
+          lobbies.forEach(lobby => {
+            output.innerHTML += `<p>Lobby ID: ${lobby.lobbyId}, Host ID: ${lobby.hostId}, Players: ${lobby.playerCount}</p>`;
+          });
+        }
+        console.log("Available lobbies:", lobbies);
+      });
+    }
+  </script>
+</body>
+</html>
