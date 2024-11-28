@@ -71,7 +71,8 @@ export class UnoDeck implements Deck {
   
     
     deal(): Card | undefined {
-      return this.cards.shift(); 
+      let card = this.cards.shift();
+      return card; 
     }
   
     get size(): number {

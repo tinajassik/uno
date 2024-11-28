@@ -24,5 +24,5 @@ export function createHand({
 }
 
 export function createGame(props: Partial<uno.Props>): uno.Game {
-  return uno.createGame(props)
+  return uno.createGame(props);
 }

@@ -23,6 +23,7 @@
     "typescript": "^5.4.5"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.25.4"
+    "@babel/preset-env": "^7.25.4",
+    "ts-node": "^10.9.2"
   }
 }

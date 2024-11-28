@@ -156,7 +156,7 @@ describe("Legal plays", () => {
   })
 
   describe("legal plays on a draw card", () => {
-    let builder = shuffleBuilder()
+    let builder: any;
     beforeEach(() => {
       builder = shuffleBuilder().discard().is({type: 'DRAW', color: 'BLUE'})
     })
