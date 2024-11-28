@@ -33,8 +33,8 @@ describe("Game set up", () => {
     expect(game.score(2)).toBe(0)
     expect(game.score(3)).toBe(0)
   })
-  it("has no winner", () => {
-    expect(game.winner()).toBeUndefined();
+  it("has no getWinner", () => {
+    expect(game.getWinner()).toBeUndefined();
   })
   it("requires at least 2 players", () => {
     expect(() => createGame({players: ['a'], targetScore: 500})).toThrow()
@@ -47,15 +47,15 @@ describe("Game set up", () => {
     expect(() => game.player(4)).toThrow()
   })
   it("starts a hand", () => {
-    expect(game.currentHand()).toBeDefined()
+    expect(game.getCurrentHand()).toBeDefined()
   })
   it("doesn't start a new hand if no action is taken", () => {
-    const hand = game.currentHand()
-    expect(game.currentHand()).toBe(hand)
+    const hand = game.getCurrentHand()
+    expect(game.getCurrentHand()).toBe(hand)
   })
   it("selects a random player as dealer", () => {
     const game: Game = createGame({players: ['a', 'b', 'c', 'd'], targetScore: 500, randomizer: () => 1})
-    expect(game.currentHand()?.dealer).toBe(1)
+    expect(game.getCurrentHand()?.dealer).toBe(1)
   })
 })
 
@@ -78,10 +78,10 @@ describe("Playing a hand", () => {
   }
   describe("while the hand is still running", () => {
     const game = createGame(props)
-    const hand = game.currentHand()!
+    const hand = game.getCurrentHand()!
     hand.draw()
-    test("no winner has been found", () => {
-      expect(game.winner()).toBeUndefined()
+    test("no getWinner has been found", () => {
+      expect(game.getWinner()).toBeUndefined()
     })
     test("the score is unchanged", () => {
       expect(game.score(0)).toBe(0)
@@ -90,12 +90,12 @@ describe("Playing a hand", () => {
       expect(game.score(3)).toBe(0)
     })
     test("the hand is the same", () => {
-      expect(game.currentHand()).toBe(hand)
+      expect(game.getCurrentHand()).toBe(hand)
     })
   })
   describe("when the hand is over", () => {
     const game = createGame(props)
-    const hand = game.currentHand()!
+    const hand = game.getCurrentHand()!
     hand.draw()
     hand.play(0)
     test("the setup is as expected", () => {
@@ -103,8 +103,8 @@ describe("Playing a hand", () => {
       expect(hand.winner()).toEqual(1)
       expect(hand.score()).toEqual(78)
     })
-    test("the game still has no winner", () => {
-      expect(game.winner()).toBeUndefined()
+    test("the game still has no getWinner", () => {
+      expect(game.getWinner()).toBeUndefined()
     })
     test("the score is updated", () => {
       expect(game.score(0)).toBe(0)
@@ -113,7 +113,7 @@ describe("Playing a hand", () => {
       expect(game.score(3)).toBe(0)
     })
     test("a new hand is started", () => {
-      expect(game.currentHand()).not.toBe(hand)
+      expect(game.getCurrentHand()).not.toBe(hand)
     })
   })
 })
@@ -135,10 +135,10 @@ describe("ending the second hand", () => {
     cardsPerPlayer: 1
   }
   const game = createGame(props)
-  const hand1 = game.currentHand()!
+  const hand1 = game.getCurrentHand()!
   hand1.draw()
   hand1.play(0)
-  const hand2 = game.currentHand()!
+  const hand2 = game.getCurrentHand()!
   hand2.play(0)
 
   test("set up is as expected", () => {
@@ -147,8 +147,8 @@ describe("ending the second hand", () => {
     expect(hand2.winner()).toBe(0)
     expect(hand2.score()).toBe(73)
   })
-  test("the game still has no winner", () => {
-    expect(game.winner()).toBeUndefined()
+  test("the game still has no getWinner", () => {
+    expect(game.getWinner()).toBeUndefined()
   })
   test("the score is updated", () => {
     expect(game.score(0)).toBe(73)
@@ -157,11 +157,10 @@ describe("ending the second hand", () => {
     expect(game.score(3)).toBe(0)
   })
   test("a new hand is started", () => {
-    expect(game.currentHand()).not.toBe(hand1)
-    expect(game.currentHand()).not.toBe(hand2)
+    expect(game.getCurrentHand()).not.toBe(hand1)
+    expect(game.getCurrentHand()).not.toBe(hand2)
   })
 })
-
 const thirdShuffle = shuffleBuilder({ players: 4, cardsPerPlayer: 1 })
   .discard().is({ type: 'NUMBERED', color: 'BLUE', number: 8 })
   .hand(0).is({ color: 'BLUE', type: 'DRAW' })
@@ -180,12 +179,12 @@ describe("ending the second hand", () => {
     cardsPerPlayer: 1
   }
   const game = createGame(props)
-  const hand1 = game.currentHand()!
+  const hand1 = game.getCurrentHand()!
   hand1.draw()
   hand1.play(0)
-  const hand2 = game.currentHand()!
+  const hand2 = game.getCurrentHand()!
   hand2.play(0)
-  const hand3 = game.currentHand()!
+  const hand3 = game.getCurrentHand()!
   hand3.play(0)
 
   test("set up is as expected", () => {
@@ -196,7 +195,7 @@ describe("ending the second hand", () => {
     expect(hand3.score()).toBe(143)
   })
   test("player 0 won", () => {
-    expect(game.winner()).toEqual(0)
+    expect(game.getWinner()).toEqual(0)
   })
   test("the score is updated", () => {
     expect(game.score(0)).toBe(216)
@@ -205,6 +204,6 @@ describe("ending the second hand", () => {
     expect(game.score(3)).toBe(0)
   })
   test("a new hand is not started", () => {
-    expect(game.currentHand()).toBeUndefined()
+    expect(game.getCurrentHand()).toBeUndefined()
   })
 })  
