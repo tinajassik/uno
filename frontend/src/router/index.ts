@@ -1,13 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import GameSetup from '../views/GameSetup.vue';
 import GameOver from './../views/GameOver.vue';
+import GameRoom from './../views/GameRoom.vue';
 import Home from './../views/Home.vue';
 import { useAuthStore } from '@/store/authStore';
 
 const routes = [
   { path: '/game-setup', name: 'GameSetup', component: GameSetup },
   { path: '/game-over', name: 'GameOver', component: GameOver },
-  { path: '/', name: 'HomePage', component: Home }
+  { path: '/', name: 'HomePage', component: Home },
+  { path: '/game-room', name: 'GameRoom', component: GameRoom }
 ];
 
 const router = createRouter({

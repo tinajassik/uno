@@ -6,146 +6,64 @@
         <img src="@/assets/images/misc/play_with_bots.jpg" alt="Bots" />
         <p>Play Against Bots</p>
       </div>
-      <div class="option" @click="openLobbyModal">
+      <div class="option" @click="selectMode('friends')">
         <img src="@/assets/images/misc/play_with_friends.png" alt="Friends" />
         <p>Play with Friends</p>
       </div>
     </div>
 
-    <div v-if="showLobbyModal" class="modal-overlay" @click.self="closeLobbyModal">
-      <div class="modal-content">
-        <h2 v-if="!isCreatingRoom">Match List</h2>
-        <h2 v-else>Create Room</h2>
-        
-        <div v-if="!isCreatingRoom">
-          <input v-model="searchQuery" placeholder="Find a room..." class="search-box" />
-          <div class="lobby-list">
-            <div v-for="lobby in filteredLobbies" :key="lobby.id" class="lobby-item">
-              <span>{{ lobby.name }} ({{ lobby.players }}/{{ lobby.maxPlayers }})</span>
-              <span :class="{ full: lobby.isFull }">{{ lobby.isFull ? 'Full' : 'Open' }}</span>
-            </div>
-          </div>
-          <button @click="fetchLobbies">Update</button>
-          <div class="actions">
-            <button @click="toggleCreateRoom">Create Match</button>
-            <button @click="closeLobbyModal">Back</button>
-          </div>
-        </div>
-
-        <div v-if="isCreatingRoom" class="create-room">
-          <input v-model="roomName" type="text" placeholder="Enter room name" />
-          <select v-model="numberOfPlayers">
-            <option v-for="n in 7" :key="n" :value="n">{{ n }} Players</option>
-          </select>
-          <div class="actions">
-            <button @click="createRoom">Create Room</button>
-            <button @click="toggleCreateRoom">Cancel</button>
-          </div>
-        </div>
+    <!-- Bot Setup Modal -->
+    <div v-if="showBotSetupModal" class="modal-overlay">
+      <div class="modal">
+        <h3>Select Number of Bots</h3>
+        <input type="number" v-model="selectedBots" min="1" max="3" />
+        <button @click="startSinglePlayerGame">Start Game</button>
+        <button @click="closeBotSetupModal">Cancel</button>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import axios from 'axios';
-import AppHeader from '@/components/AppHeader.vue';
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import AppHeader from "@/components/AppHeader.vue";
+import socket from "@/services/socketService";
 
 export default {
-  name: 'GameSetup',
-  components: {
-    AppHeader,
-  },
+  name: "GameSetup",
+  components: { AppHeader },
   setup() {
     const router = useRouter();
-    const showLobbyModal = ref(false);
-    const lobbies = ref([]);
-    const searchQuery = ref('');
-    const isCreatingRoom = ref(false);
-    const roomName = ref('');
-    const numberOfPlayers = ref(2);
-
-    const openLobbyModal = () => {
-      showLobbyModal.value = true;
-      fetchLobbies();
-    };
-
-    const closeLobbyModal = () => {
-      showLobbyModal.value = false;
-      isCreatingRoom.value = false;
-      roomName.value = '';
-      numberOfPlayers.value = 2;
-    };
-
-    const fetchLobbies = async () => {
-      try {
-        const response = await axios.post('/Game/getAllGames');
-        lobbies.value = response.data;
-      } catch (error) {
-        console.error('Error fetching lobbies:', error);
-      }
-    };
-
-    const filteredLobbies = computed(() =>
-      lobbies.value.filter((lobby) =>
-        lobby.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-      )
-    );
-
-    const toggleCreateRoom = () => {
-      isCreatingRoom.value = !isCreatingRoom.value;
-      if (!isCreatingRoom.value) {
-        roomName.value = '';
-        numberOfPlayers.value = 2;
-      }
-    };
-
-    const createRoom = async () => {
-      if (!roomName.value) {
-        alert('Please enter a room name');
-        return;
-      }
-
-      try {
-        const response = await axios.post('/Game/createGameLobby', {
-          name: roomName.value,
-          maxPlayers: numberOfPlayers.value,
-        });
-        console.log('Room created:', response.data);
-        closeLobbyModal();
-        fetchLobbies();
-      } catch (error) {
-        console.error('Error creating room:', error);
-      }
-    };
+    const showBotSetupModal = ref(false);
+    const selectedBots = ref(1);
 
     const selectMode = (mode: string) => {
-      console.log(`Selected mode: ${mode}`);
-      if (mode === 'bots') {
-        router.push({ name: 'GameWithBots' });
+      if (mode === "bots") {
+        showBotSetupModal.value = true;
       }
+    };
+
+    const startSinglePlayerGame = () => {
+      socket.emit("startGame", { isSinglePlayer: true, numBots: selectedBots.value });
+      router.push({ name: "GameRoom" });
+    };
+
+    const closeBotSetupModal = () => {
+      showBotSetupModal.value = false;
     };
 
     return {
       selectMode,
-      showLobbyModal,
-      openLobbyModal,
-      closeLobbyModal,
-      searchQuery,
-      lobbies,
-      filteredLobbies,
-      fetchLobbies,
-      isCreatingRoom,
-      toggleCreateRoom,
-      roomName,
-      numberOfPlayers,
-      createRoom,
+      showBotSetupModal,
+      selectedBots,
+      startSinglePlayerGame,
+      closeBotSetupModal,
     };
   },
 };
 </script>
+
 
 <style scoped>
 .game-setup {
@@ -212,67 +130,35 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 }
 
-.modal-content {
-  background: #ffffff;
+.modal {
+  background: #fff;
   padding: 20px;
-  border-radius: 10px;
-  width: 400px;
-  max-width: 90vw;
+  border-radius: 8px;
   text-align: center;
+  max-width: 400px;
+  width: 90%;
 }
 
-.search-box {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 1rem;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-}
-
-.lobby-list {
+.match-list {
   max-height: 200px;
   overflow-y: auto;
-  margin-bottom: 1rem;
+  margin-top: 10px;
 }
 
-.lobby-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px;
+.match-item {
+  padding: 10px;
   border-bottom: 1px solid #ddd;
-}
-
-.lobby-item .full {
-  color: red;
-}
-
-.actions button {
-  margin: 5px;
-  padding: 10px 20px;
   cursor: pointer;
-  border: none;
-  background-color: #007bff;
-  color: white;
-  border-radius: 5px;
 }
 
-.actions button:hover {
-  background-color: #0056b3;
-}
-
-.create-room input,
-.create-room select {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 1rem;
-  border-radius: 5px;
-  border: 1px solid #ddd;
+button {
+  margin-top: 10px;
 }
 </style>
