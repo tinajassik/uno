@@ -13,6 +13,7 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Express + TypeScript Server Test");
 });
 
+app.use(express.json());
 app.use('/api', gameRoutes);
 app.use('/user', userRoutes);
 

@@ -4,8 +4,8 @@ import { userController } from '../controllers/userController';
 
 const router = express.Router();
 
-router.post('/register', userController.registerUser); // Create a new user
-router.post('/login', userController.loginUser);       // Log in a user
-router.get('/:id', userController.getUserProfile);     // Get user profile
+router.post('/register', userController.registerUser);
+router.post('/login', userController.loginUser);
+router.get('/:id', userController.getUserProfile);
 
 export default router;
