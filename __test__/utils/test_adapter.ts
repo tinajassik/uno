@@ -1,7 +1,7 @@
-import { Randomizer, Shuffler, standardShuffler } from '../../src/utils/random_utils'
-import * as deck from '../../src/model/deck'
-import * as hand from '../../src/model/hand'
-import * as uno from '../../src/model/uno'
+import { Randomizer, Shuffler, standardShuffler } from '../../shared/utils/random_utils'
+import * as deck from '../../shared/model/deck'
+import * as hand from '../../shared/model/hand'
+import * as uno from '../../shared/model/uno'
 
 export function createInitialDeck(): deck.Deck {
   return deck.createInitialDeck()

@@ -14,7 +14,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use(express.json());
-app.use('/api', gameRoutes);
+app.use('/games', gameRoutes);
 app.use('/user', userRoutes);
 
 app.listen(port, () => {
