@@ -1,50 +1,78 @@
-import { Request, Response } from "express";
+import { Request, Response } from 'express';
+import { GameService } from '../services/gameService';
 
 export const gameController = {
     createGame: (req: Request, res: Response) => {
-        const { players, targetScore } = req.body;
-        console.log(`Creating game with players: ${players}`);
-        res.status(201).json({ message: "Game created successfully!", gameId: "dummy-game-id" });
+        try {
+            const { userId, targetScore } = req.body;
+            const gameId = GameService.createLobby(userId);
+            res.json({ gameId });
+        } catch (error) {
+            res.status(400).json({ error: (error as Error).message });
+        }
     },
 
     joinGame: (req: Request, res: Response) => {
-        const { id } = req.params;
-        const { player } = req.body;
-        console.log(`Player ${player} joining game: ${id}`);
-        res.status(200).json({ message: "Player added to game successfully!" });
+        try {
+            const { id: gameId } = req.params;
+            const { userId } = req.body;
+            GameService.joinLobby(gameId, userId);
+            res.json({ success: true });
+        } catch (error) {
+            res.status(400).json({ error: (error as Error).message });
+        }
     },
 
     startGame: (req: Request, res: Response) => {
-        const { id } = req.params;
-        console.log(`Starting game with ID: ${id}`);
-        res.status(200).json({ message: "Game started successfully!" });
+        try {
+            const { id: gameId } = req.params;
+            GameService.startGame(gameId);
+            res.json({ success: true });
+        } catch (error) {
+            res.status(400).json({ error: (error as Error).message });
+        }
     },
 
     playTurn: (req: Request, res: Response) => {
-        const { id } = req.params;
-        const { playerIndex, cardIndex, color } = req.body;
-        console.log(`Player ${playerIndex} playing card at index ${cardIndex} with color ${color} in game: ${id}`);
-        res.status(200).json({ message: "Turn played successfully!" });
+        try {
+            const { id: gameId } = req.params;
+            const { userId, card } = req.body;
+            GameService.playTurn(gameId, userId, card);
+            res.json({ success: true });
+        } catch (error) {
+            res.status(400).json({ error: (error as Error).message });
+        }
     },
 
     getGameState: (req: Request, res: Response) => {
-        const { id } = req.params;
-        console.log(`Fetching state for game ID: ${id}`);
-        res.status(200).json({
-            gameId: id,
-            players: ["Alice", "Bob"],
-            currentPlayer: "Alice",
-            state: "in-progress"
-        });
+        try {
+            const { id: gameId } = req.params as { id: string };
+            const game = GameService.getLobbyState(gameId);
+            if (!game) {
+                return res.status(404).json({ error: 'Game not found' });
+            }
+            res.json(game);
+        } catch (error) {
+            res.status(400).json({ error: (error as Error).message });
+        }
     },
 
     getGameList: (req: Request, res: Response) => {
-        console.log(`Fetching list of games`);
-        res.status(200).json({
-            games: [
-                { id: "game1", players: ["Alice", "Bob"], state: "in-progress" },
-                { id: "game2", players: ["Charlie", "David"], state: "completed" }
-            ]
-        });
+        try {
+            const games = GameService.getLobbyList();
+            res.json(games);
+        } catch (error) {
+            res.status(400).json({ error: (error as Error).message });
+        }
+    },
+
+    playWithBots: (req: Request, res: Response) => {
+        try {
+            const { userId, botCount } = req.body;
+            const lobbyId = GameService.playWithBots(userId, botCount);
+            res.status(200).json({ lobbyId });
+        } catch (error) {
+            res.status(400).json({ error: (error as Error).message });
+        }
     }
 };

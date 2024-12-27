@@ -8,7 +8,8 @@ router.post('/create', gameController.createGame);
 router.post('/:id/join', gameController.joinGame);
 router.post('/:id/start', gameController.startGame);
 router.post('/:id/play', gameController.playTurn);
-router.get('/:id', gameController.getGameState);
+router.post('/playWithBots', gameController.playWithBots);
+// router.get('/:id', gameController.getGameState);
 router.get('/', gameController.getGameList);
 
 export default router;
