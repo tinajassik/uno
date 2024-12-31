@@ -1,6 +1,6 @@
 import { Shuffler } from "../utils/random_utils";
-import * as deck from '../../src/model/deck'
-import {Card, Deck} from '../../src/model/deck'
+import * as deck from './deck'
+import {Card, Deck} from './deck'
 
 export interface Hand {
   
