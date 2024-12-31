@@ -41,6 +41,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/authStore';
+import {initializeSocket} from "@/services/socketService";
 
 export default {
   name: 'HomePage',
@@ -66,8 +67,9 @@ export default {
 
     const handleLogin = async () => {
       await authStore.login(loginData.value);
-      if (authStore.token) {
-        router.replace({ name: 'GameSetup' });
+      if (authStore.userId) {
+        initializeSocket(authStore.userId);
+        await router.replace({ name: "GameSetup" });
       }
     };
 

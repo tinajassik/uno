@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { createInitialDeck } from '../utils/test_adapter'
-import { standardShuffler } from '../../src/utils/random_utils'
+import { standardShuffler } from '../../shared/utils/random_utils'
 import { is } from '../utils/predicates'
-import * as deck from '../../src/model/deck'
+import * as deck from '../../shared/model/deck'
 import { memoizingShuffler } from '../utils/shuffling'
 
 describe("Initial deck", () => {

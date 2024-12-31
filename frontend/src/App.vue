@@ -5,8 +5,21 @@
 </template>
 
 <script lang="ts">
+import {useGameStore} from "@/store/gameStore";
+import {useAuthStore} from "@/store/authStore";
+import {initializeSocket} from "@/services/socketService";
+
 export default {
   name: 'App',
+
+  setup() {
+    // const gameStore = useGameStore();
+    //
+    // // Initialize socket listeners when the app loads
+    // gameStore.initializeSocketListeners();
+
+    return {};
+  },
 };
 </script>
 

@@ -28,7 +28,13 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import AppHeader from "@/components/AppHeader.vue";
-import socket from "@/services/socketService";
+import axios from "axios";
+import {useAuthStore} from "@/store/authStore";
+// import socket from "@/services/socketService";
+const GAMES_BASE_URL = 'http://localhost:3000/games';
+
+
+
 
 export default {
   name: "GameSetup",
@@ -37,7 +43,7 @@ export default {
     const router = useRouter();
     const showBotSetupModal = ref(false);
     const selectedBots = ref(1);
-
+    const authStore = useAuthStore();
     const selectMode = (mode: string) => {
       if (mode === "bots") {
         showBotSetupModal.value = true;
@@ -45,8 +51,12 @@ export default {
     };
 
     const startSinglePlayerGame = () => {
-      socket.emit("startGame", { isSinglePlayer: true, numBots: selectedBots.value });
+      axios.post(`${GAMES_BASE_URL}/playWithBots`, {
+        botCount: selectedBots.value, // Number of bots selected
+        userId: authStore.userId,
+      })
       router.push({ name: "GameRoom" });
+
     };
 
     const closeBotSetupModal = () => {

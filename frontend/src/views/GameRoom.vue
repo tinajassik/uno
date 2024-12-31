@@ -2,23 +2,24 @@
   <div class="game-room">
     <!-- Render players dynamically -->
     <div
-      v-for="(player, index) in gameState.players"
-      :key="player.name"
-      :class="`player player-${getPosition(index)}`"
+        v-for="(player, index) in players"
+        :key="player"
+        :class="`player player-${getPosition(index)}`"
     >
-      <p>{{ player.name }} ({{ player.cards.length }} cards)</p>
+      <p>{{ player }} ({{ getPlayerHandSize(index) }} cards)</p>
+      <p>Here</p>
       <div class="cards">
         <div
-          v-for="(card, cardIndex) in player.cards"
-          :key="cardIndex"
-          class="card"
+            v-for="(card, cardIndex) in getPlayerCards(index)"
+            :key="cardIndex"
+            class="card"
         >
           <!-- Show card details and images only for the current player -->
           <img
-            v-if="index === gameState.currentPlayerIndex"
-            :src="getCardImage(card)"
-            alt="Card"
-            class="card-image"
+              v-if="currentPlayer === index"
+              :src="getCardImage(card)"
+              alt="Card"
+              class="card-image"
           />
           <div v-else class="card-back"></div>
         </div>
@@ -35,10 +36,10 @@
         <p>Discard</p>
         <div class="card">
           <img
-            v-if="gameState.discardPile[0]"
-            :src="getCardImage(gameState.discardPile[0])"
-            alt="Discarded Card"
-            class="card-image"
+              v-if="currentHand?.discardPile()?.top()"
+              :src="getCardImage(currentHand.discardPile().top())"
+              alt="Discarded Card"
+              class="card-image"
           />
         </div>
       </div>
@@ -47,43 +48,33 @@
 </template>
 
 <script lang="ts">
-import { reactive, onMounted } from "vue";
-import socket from "@/services/socketService";
-
-// Define card interface
-type Card = {
-  color: string;
-  type: string;
-  number?: number; // Optional for numbered cards
-};
-
-// Define player interface
-type Player = {
-  name: string;
-  cards: Card[];
-};
-
-// Define game state interface
-type GameState = {
-  players: Player[];
-  discardPile: Card[];
-  drawPile: Card[];
-  currentPlayerIndex: number;
-};
+import { computed, onMounted, onUnmounted } from "vue";
+import { useGameStore } from "@/store/gameStore";
+import { addSocketListener, removeSocketListener } from "@/services/socketService";
+import type { Card } from "@shared/deck";
+import type {Hand} from "@shared/hand";
 
 export default {
   name: "GameRoom",
   setup() {
-    // Reactive game state
-    const gameState = reactive<GameState>({
-      players: [],
-      discardPile: [],
-      drawPile: [],
-      currentPlayerIndex: -1,
-    });
+    const gameStore = useGameStore();
+
+    // Reactive computed properties
+    const players = computed(() => gameStore.players);
+    const currentHand = computed(() => gameStore.currentHand);
+    const currentPlayer = computed(() => gameStore.currentPlayer);
+    const game = computed(() => gameStore.game)
+
+    // Helper to get a player's cards
+    const getPlayerCards = (index: number): Card[] =>
+        currentHand.value?.playerHand(index) || [];
+
+    // Helper to get a player's hand size
+    const getPlayerHandSize = (index: number): number =>
+        getPlayerCards(index).length;
 
     // Determine player positions for UI
-    const getPosition = (index: number) => {
+    const getPosition = (index: number): string => {
       switch (index) {
         case 0:
           return "top";
@@ -98,12 +89,12 @@ export default {
 
     // Map card to its image path
     const getCardImage = (card: Card): string => {
-      const basePath = "/assets/images/cards/";
+      const basePath = "src/assets/images/cards/";
 
       if (card.type === "NUMBERED") {
-        return `${basePath}${card.color.toLowerCase()}/${card.number}.png`;
+        return `${basePath}${card.color?.toLowerCase()}/${card.number}.png`;
       } else if (["SKIP", "REVERSE", "DRAW"].includes(card.type)) {
-        return `${basePath}${card.color.toLowerCase()}/${card.type.toLowerCase()}.png`;
+        return `${basePath}${card.color?.toLowerCase()}/${card.type.toLowerCase()}.png`;
       } else if (card.type === "WILD" || card.type === "WILD DRAW") {
         return `${basePath}wild/${card.type.toLowerCase().replace(" ", "-")}.png`;
       } else {
@@ -111,21 +102,39 @@ export default {
       }
     };
 
-    // Fetch and update game state on mount
-    onMounted(() => {
-      // Listen for game state updates from the backend
-      socket.on("gameStateUpdate", (state: GameState) => {
-        gameState.players = state.players;
-        gameState.discardPile = state.discardPile;
-        gameState.drawPile = state.drawPile;
-        gameState.currentPlayerIndex = state.currentPlayerIndex;
-      });
+    // Handle game state update
+    const handleGameUpdate = (data: any) => {
+      console.log("Game state updated in GameRoom:", data);
+    };
 
-      // Emit a request to start a single-player game for testing
-      socket.emit("startGame", { isSinglePlayer: true, numBots: 3 });
+    // Fetch initial game state on mount
+    onMounted(() => {
+      // addSocketListener("game:update", handleGameUpdate);
+
+      // Fetch the initial game state if needed
+      // if (!gameStore.game) {
+      //   gameStore.fetchGameState(gameStore.lobbyId || "");
+      // }
+      console.log("Game state on mount:", game.value);
+      console.log("Players on mount:", players.value);
+      console.log("Current hand on mount:", currentHand.value);
     });
 
-    return { gameState, getPosition, getCardImage };
+    // Clean up listeners on unmount
+    onUnmounted(() => {
+      // removeSocketListener("game:update");
+    });
+
+    return {
+      players,
+      currentHand,
+      currentPlayer,
+      game,
+      getPlayerCards,
+      getPlayerHandSize,
+      getPosition,
+      getCardImage,
+    };
   },
 };
 </script>
@@ -214,7 +223,7 @@ export default {
 .card-back {
   width: 50px;
   height: 75px;
-  background: gray;
+  background: grey;
   border-radius: 8px;
 }
 </style>
