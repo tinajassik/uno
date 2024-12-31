@@ -4,8 +4,8 @@ import gameRoutes from "./routes/gameRoutes";
 import userRoutes from "./routes/userRoutes";
 import cors from "cors";
 import { Server as SocketIOServer } from 'socket.io';
-import { GameService } from './services/gameService';
 import http from 'http';
+import { socketService } from "./services/socketService";
 
 dotenv.config();
 
@@ -23,7 +23,7 @@ const io = new SocketIOServer(server, {
     }
 });
 
-GameService.initialize(io);
+socketService.initialize(io);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Express + TypeScript Server Test");

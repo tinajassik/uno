@@ -1,55 +1,26 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Game, Props, createGame } from '../../../shared/model/uno';
-import { Server as SocketIOServer } from 'socket.io';
-import { Hand } from '../../../shared/model/hand';
+import { socketService } from './socketService';
 import { Card } from '../../../shared/model/deck';
 
 interface GameSession {
     id: string;
     game?: Game;
-    players: string[];
+    players: string[]; // List of player IDs
     state: 'waiting' | 'in-progress' | 'completed';
     createdAt: Date;
 }
 
 export class GameService {
-    private static io: SocketIOServer;
     private static lobbies: Map<string, GameSession> = new Map();
-
-    // Initialize the Socket.IO server
-    static initialize(io: SocketIOServer): void {
-        this.io = io;
-        this.setupSocketHandlers();
-    }
-
-    // Socket handlers for joining/leaving game rooms
-    private static setupSocketHandlers(): void {
-        this.io.on('connection', (socket) => {
-            socket.on('join-game', (gameId: string, playerId: string) => {
-                socket.join(`game:${gameId}`);
-            });
-
-            socket.on('leave-game', (gameId: string) => {
-                socket.leave(`game:${gameId}`);
-            });
-        });
-    }
-
-    private static emitToGame(gameId: string, eventType: string, data: any): void {
-        this.io.to(`game:${gameId}`).emit(eventType, data);
-    }
-
-    // === Public API ===
 
     /**
      * Create a new game lobby (stored in memory)
      */
     static createLobby(creatorId: string): string {
         const lobbyId = uuidv4();
-
         const newLobby: GameSession = {
             id: lobbyId,
-            game: undefined, // Game object is created when the game starts
             players: [creatorId],
             state: 'waiting',
             createdAt: new Date(),
@@ -57,7 +28,11 @@ export class GameService {
 
         this.lobbies.set(lobbyId, newLobby);
 
-        this.emitToGame(lobbyId, 'lobby:created', {
+        // Add the creator to the lobby room
+        socketService.addUserToRoom(creatorId, lobbyId);
+
+        // Notify the creator about the lobby creation
+        socketService.emitToUser(creatorId, 'lobby:created', {
             lobbyId,
             players: [creatorId],
         });
@@ -66,7 +41,7 @@ export class GameService {
     }
 
     /**
-     * Join an existing lobby (stored in memory)
+     * Join an existing lobby
      */
     static joinLobby(lobbyId: string, playerId: string): void {
         const lobby = this.lobbies.get(lobbyId);
@@ -85,14 +60,19 @@ export class GameService {
 
         lobby.players.push(playerId);
 
-        this.emitToGame(lobbyId, 'lobby:player-joined', {
+        // Add the player to the lobby room
+        socketService.addUserToRoom(playerId, lobbyId);
+
+        // Notify all players in the lobby
+        socketService.emitToRoom(lobbyId, 'lobby:player-joined', {
             lobbyId,
             playerId,
+            players: lobby.players,
         });
     }
 
     /**
-     * Start the game from a lobby
+     * Start a game from a lobby
      */
     static startGame(lobbyId: string): void {
         const lobby = this.lobbies.get(lobbyId);
@@ -113,80 +93,56 @@ export class GameService {
             players: lobby.players,
             targetScore: 500,
             cardsPerPlayer: 7,
-            // randomizer: () => Math.floor(Math.random() * lobby.players.length),
         };
 
         lobby.game = createGame(gameProps);
         lobby.state = 'in-progress';
 
-        this.emitToGame(lobbyId, 'game:started', {
+        // Notify all players in the lobby
+        socketService.emitToRoom(lobbyId, 'game:started', {
             lobbyId,
             players: lobby.players,
         });
     }
 
-    static playWithBots(creatorId: string, botCount: number): string {
-        // Create a lobby first
-        const lobbyId = uuidv4();
-    
-        const newLobby: GameSession = {
-            id: lobbyId,
-            players: [creatorId],
-            state: 'waiting',
-            createdAt: new Date(),
-        };
-    
-        this.lobbies.set(lobbyId, newLobby);
-    
-        // Start the game with bots
-        this.startGameWithBots(lobbyId, botCount);
-    
-        return lobbyId; // Return the lobby ID to the frontend for tracking
-    }
-    
-
-    static startGameWithBots(lobbyId: string, botCount: number): void {
+    /**
+     * Start a game with bots
+     */
+    static startGameWithBots(creatorId: string, botCount: number): string {
+        const lobbyId = this.createLobby(creatorId);
         const lobby = this.lobbies.get(lobbyId);
-    
+
         if (!lobby) {
             throw new Error('Lobby not found');
         }
-    
-        if (lobby.state !== 'waiting') {
-            throw new Error('Game has already started');
-        }
-    
-        if (lobby.players.length + botCount < 2) {
-            throw new Error('Not enough players to start the game');
-        }
-    
-        // Add bots to the player list
+
+        // Add bots to the game
         for (let i = 0; i < botCount; i++) {
-            const botName = `Bot${i + 1}`;
-            lobby.players.push(botName);
+            lobby.players.push(`Bot${i + 1}`);
         }
-    
-        // Create game instance
+
         const gameProps: Partial<Props> = {
             players: lobby.players,
             targetScore: 500,
             cardsPerPlayer: 7,
         };
-    
+
         lobby.game = createGame(gameProps);
         lobby.state = 'in-progress';
-    
-        this.emitToGame(lobbyId, 'game:started-with-bots', {
+
+        // Notify all players in the lobby
+        socketService.emitToRoom(lobbyId, 'game:started-with-bots', {
             lobbyId,
             players: lobby.players,
         });
 
-        this.emitToGame(lobbyId, 'game:update',{
+        socketService.emitToRoom(lobbyId, "game:update", {
             lobbyId,
-            game: lobby.game,
-        })
+            game: lobby.game, // Include the current game state
+        });
+
+        return lobbyId;
     }
-    
 
     /**
      * Play a turn in the game
@@ -210,14 +166,12 @@ export class GameService {
         if (!currentHand) {
             throw new Error('Current hand is not available');
         }
-        //Should be index, color?
-        currentHand.play(1, card.color);
 
-        // Game-specific logic to play a turn
-        // Example:
-        // lobby.game.playTurn(playerId, card);
+        const numericId = parseInt(playerId, 10);
+        currentHand.play(numericId, card.color);
 
-        this.emitToGame(lobbyId, 'game:turn-played', {
+        // Notify all players in the lobby about the turn
+        socketService.emitToRoom(lobbyId, 'game:turn-played', {
             lobbyId,
             playerId,
             card,
@@ -228,7 +182,7 @@ export class GameService {
         if (winner !== undefined) {
             lobby.state = 'completed';
 
-            this.emitToGame(lobbyId, 'game:ended', {
+            socketService.emitToRoom(lobbyId, 'game:ended', {
                 lobbyId,
                 winner: lobby.players[winner],
             });
@@ -247,15 +201,5 @@ export class GameService {
      */
     static getLobbyList(): GameSession[] {
         return Array.from(this.lobbies.values());
-    }
-
-    // === Private Helpers ===
-
-    private static findLobby(lobbyId: string): GameSession {
-        const lobby = this.lobbies.get(lobbyId);
-        if (!lobby) {
-            throw new Error('Lobby not found');
-        }
-        return lobby;
     }
 }

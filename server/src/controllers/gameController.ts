@@ -69,7 +69,7 @@ export const gameController = {
     playWithBots: (req: Request, res: Response) => {
         try {
             const { userId, botCount } = req.body;
-            const lobbyId = GameService.playWithBots(userId, botCount);
+            const lobbyId = GameService.startGameWithBots(userId, botCount);
             res.status(200).json({ lobbyId });
         } catch (error) {
             res.status(400).json({ error: (error as Error).message });
